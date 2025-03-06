@@ -30,7 +30,7 @@ def menu() -> None:
     print("5 - Soma de Matrizes")
     print("6 - Subtração de Matrizes")
     print("7 - Multiplicação de Matrizes")
-    print("8 - Determinante da Matriz")
+    print("8 - Determinante de Matriz")
     print("9 - Sair do Programa")
 
     try:
