@@ -6,7 +6,7 @@ class Matriz:
 
     def __init__(self: object, codigo: int, linha: int, coluna: int) -> None:
         self.__codigo: int = codigo
-        self.__matriz: list[int] = []  # futuramente vai receber uma lista com inteiros
+        self.__matriz: list[list[int]] = []  # futuramente vai receber uma lista com inteiros
         self.__linha: int = linha
         self.__coluna: int = coluna
 

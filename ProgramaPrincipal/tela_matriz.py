@@ -1,6 +1,10 @@
 from time import sleep
 
+import funcoes.func_auxiliares as aux
 from classes.matriz import Matriz, GerenciadorMatrizes
+from funcoes.operacao import (soma_ou_subtracao_matrizes,
+                              multiplicacao_matrizes,
+                              determinante)
 
 
 gerenciador = GerenciadorMatrizes()
@@ -14,21 +18,6 @@ def titulo(texto: str) -> None:
     print("=" * 50)
     print(texto.center(50, ' '))
     print('=' * 50)
-
-
-def validar_dados(texto: str, criacao_matriz: bool = False) -> int:
-    while True:
-        try:
-            resposta = int(input(texto))
-            if criacao_matriz and resposta <= 0:
-                print("Não existe matriz com linhas e/ou colunas negativas ou iguais a zero. Digite novamente!")
-                continue
-            elif criacao_matriz and resposta > 3:
-                print("O limite da matriz permitido pelo programa é de ordem 3. Digite novamente!")
-                continue
-            return resposta
-        except:
-            print("Valor inválido. Digite um número inteiro!")
 
 
 def menu() -> None:
@@ -63,16 +52,16 @@ def menu() -> None:
         remover_matriz()
     elif resp == 5:
         titulo("Soma de Matrizes")
-        soma_matrizes()
+        chamar_soma_ou_subtracao(resp)
     elif resp == 6:
         titulo("Subtração de Matrizes")
-        subtracao_matrizes()
+        chamar_soma_ou_subtracao(resp)
     elif resp == 7:
         titulo("Multiplicação de Matrizes")
-        multiplicacao_matrizes()
+        chamar_multiplicacao()
     elif resp == 8:
         titulo("Determinante de Matriz")
-        determinante()
+        chamar_determinante()
     elif resp == 9:
         print("Encerrando o programa...")
         sleep(2)
@@ -86,16 +75,16 @@ def menu() -> None:
 def criar_matriz() -> None:
     global gerenciador
 
-    linhas: int = validar_dados("Digite o número de linhas da matriz [máximo de 3 linhas]: ", True)
-    colunas: int = validar_dados("Digite o número de colunas da matriz [máximo de 3 colunas]: ", True)
+    linhas: int = aux.validar_dados("Digite o número de linhas da matriz [máximo de 3 linhas]: ", True)
+    colunas: int = aux.validar_dados("Digite o número de colunas da matriz [máximo de 3 colunas]: ", True)
 
     matriz_nova: Matriz = gerenciador.criar_matriz(linhas, colunas)
 
-    matriz_temporaria: list[int] = []
+    matriz_temporaria: list[list[int]] = []
     for i in range(0, linhas):
         matriz_temporaria.append([])
         for j in range(0, colunas):
-            matriz_temporaria[i].append(validar_dados(f"Digite o elemento da posição {i+1}x{j+1}: "))
+            matriz_temporaria[i].append(aux.validar_dados(f"Digite o elemento da posição {i+1}x{j+1}: "))
     matriz_nova.matriz = matriz_temporaria
 
     print(f"A matriz {linhas}x{colunas} foi criada.")
@@ -103,10 +92,12 @@ def criar_matriz() -> None:
     menu()
 
 
-def listar_matrizes(voltar_menu: bool = True) -> None:
+def listar_matrizes(voltar_menu: bool = True, verificar_existe: bool = True) -> None:
     global gerenciador
 
-    verificar_existencia_de_matrizes()
+    if verificar_existe:
+        if not aux.verificar_existencia_de_matrizes(gerenciador):
+            menu()
 
     gerenciador.exibir_matrizes(1.5)
 
@@ -120,21 +111,22 @@ def alteracao_matriz() -> None:
 
     listar_matrizes(False)
 
-    codigo = validar_dados("Digite o código da matriz que deseja alterar: ")
+    codigo = aux.validar_dados("Digite o código da matriz que deseja alterar: ")
 
-    verificar_matriz_com_codigo(codigo)
+    if not aux.verificar_matriz_com_codigo(gerenciador, codigo):
+        menu()
 
-    matriz_selecionada: Matriz = pegar_matriz_por_codigo(codigo)
+    matriz_selecionada: Matriz = aux.pegar_matriz_por_codigo(gerenciador, codigo)
 
-    linha_elemento = obter_posicao("Digite a linha da posição do elemento que deseja alterar: ",
+    linha_elemento = aux.obter_posicao("Digite a linha da posição do elemento que deseja alterar: ",
                                    matriz_selecionada.linha,
                                    "linhas")
 
-    coluna_elemento = obter_posicao("Digite a coluna da posição do elemento que deseja alterar: ",
+    coluna_elemento = aux.obter_posicao("Digite a coluna da posição do elemento que deseja alterar: ",
                                     matriz_selecionada.coluna,
                                     "colunas")
 
-    elemento = validar_dados(f"Insira o valor na posição {linha_elemento}x{coluna_elemento}: ")
+    elemento = aux.validar_dados(f"Insira o valor na posição {linha_elemento}x{coluna_elemento}: ")
 
     matriz_selecionada.matriz[linha_elemento-1][coluna_elemento-1] = elemento
 
@@ -156,9 +148,10 @@ def remover_matriz() -> None:
 
     listar_matrizes(False)
 
-    codigo = validar_dados("Digite o código da matriz que deseja remover: ")
+    codigo = aux.validar_dados("Digite o código da matriz que deseja remover: ")
 
-    verificar_matriz_com_codigo(codigo)
+    if not aux.verificar_matriz_com_codigo(gerenciador, codigo):
+        menu()
 
     gerenciador.remover_matriz(codigo)
 
@@ -168,39 +161,56 @@ def remover_matriz() -> None:
     menu()
 
 
-def verificar_existencia_de_matrizes() -> None:
+def chamar_soma_ou_subtracao(num: int) -> None:
     global gerenciador
 
-    if not gerenciador.matrizes:  # Dicionário vazio == False.
-        print("Não foi criada nenhuma matriz.")
-        sleep(2)
+    if not aux.verificar_duas_matrizes(gerenciador):
         menu()
 
+    listar_matrizes(False, False)
 
-def verificar_matriz_com_codigo(codigo:int) -> None:
-    global gerenciador
-
-    if codigo not in gerenciador.matrizes or codigo <= 0:
-        print("Não há uma matriz com esse código.")
-        sleep(2)
+    duas_matrizes = aux.obter_duas_matrizes(gerenciador)
+    if duas_matrizes:  # Tupla com elementos == True
+        matriz1, matriz2 = duas_matrizes
+    else:
         menu()
 
-
-def obter_posicao(entrada_msg: str, limite: int, tipo: str) -> int:
-    while True:
-        posicao = validar_dados(entrada_msg, True)
-        if posicao > limite:
-            print(f"A matriz que você selecionou não possui {posicao} {tipo}. Digite novamente!")
-            continue
-        return posicao
+    soma_ou_subtracao_matrizes(num, matriz1, matriz2)
+    menu()
 
 
-def pegar_matriz_por_codigo(codigo: int) -> Matriz:
+def chamar_multiplicacao() -> None:
     global gerenciador
 
-    for chave in gerenciador.matrizes:
-        if chave == codigo:
-            return gerenciador.matrizes[chave]
+    if not aux.verificar_duas_matrizes(gerenciador):
+        menu()
+
+    listar_matrizes(False, False)
+
+    duas_matrizes = aux.obter_duas_matrizes(gerenciador)
+    if duas_matrizes:
+        matriz1, matriz2 = duas_matrizes
+    else:
+        menu()
+
+    multiplicacao_matrizes(matriz1, matriz2)
+    menu()
+
+
+def chamar_determinante() -> None:
+    global gerenciador
+
+    listar_matrizes(False)
+
+    codigo = aux.validar_dados("Digite o código da matriz que deseja fazer o determinante: ")
+
+    if not aux.verificar_matriz_com_codigo(gerenciador, codigo):
+        menu()
+
+    mat: Matriz = aux.pegar_matriz_por_codigo(gerenciador, codigo)
+
+    determinante(mat)
+    menu()
 
 
 if __name__ == '__main__':
